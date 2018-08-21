@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">SimpleDatabase</string>
+    <string name="insert_movie_failed">Failed to insert row</string>
+    <string name="insert_movie_successful">insert successfully</string>
+    <string name="update_movie_failed">Failed to update record</string>
+    <string name="update_movie_successful">Update record successfully</string>
+    <string name="delete_movie_failed">Failed to delete movie</string>
+    <string name="delete_movie_successful">Movie deleted successfully</string>
+    <string name="movie_poster">Movie\'s Image</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="popular">Most Popular</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="favorite">Favorite</string>
+    <string name="movie_activity_name">Details Activity</string>
+    <string name="vote_average">Votes</string>
+    <string name="release_date">Released Date</string>
+    <string name="trailers">Trailers</string>
+    <string name="movie_trailer">Trailers of the movie</string>
+    <string name="reviews">Reviews</string>
+    <string name="chooser_title">Play Trailer with</string>
+</resources>
