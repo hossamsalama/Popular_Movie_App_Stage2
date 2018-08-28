@@ -7,10 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CursorAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.hossam.simpledatabase.data.TaskContract;
+import com.squareup.picasso.Picasso;
+
+import java.util.List;
 
 /**
  * Created by hossam on 8/10/2018.
@@ -21,6 +25,24 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.TaskViewHo
 
     private Context mContext;
     private Cursor mCursor;
+    private ItemClickListener mClickListener;
+    String mID;
+    String posterUrl;
+    String title;
+    String releaseDate;
+    String votes;
+    String overview;
+    String reviewUrl;
+    String trailerUrl;
+    private int idColumnIndex;
+    private int posterColumnIndex;
+    private int titleColumnIndex;
+    private int dateColumnIndex;
+    private int voteColumnIndex;
+    private int overviewColumnIndex;
+    private int reviewColumnIndex;
+    private int trailerColumnIndex;
+
 
     public SimpleAdapter(Context context, Cursor cursor) {
         mContext = context;
@@ -40,15 +62,28 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.TaskViewHo
     @Override
     public void onBindViewHolder(SimpleAdapter.TaskViewHolder holder, int position) {
 
-        int idColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_ID);
-        int titleColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_TITLE);
+        idColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_ID);
+        posterColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_POSTER);
+        titleColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_TITLE);
+        dateColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_RELEASE_DATE);
+        voteColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_VOTES);
+        overviewColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_OVERVIEW);
+        reviewColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_REVIEW_URL);
+        trailerColumnIndex = mCursor.getColumnIndex(TaskContract.TaskEntry.COLUMN_TRAILER_URL);
 
         mCursor.moveToPosition(position);
 
-        String id = mCursor.getString(idColumnIndex);
-        String title = mCursor.getString(titleColumnIndex);
+        mID = mCursor.getString(idColumnIndex);
+        posterUrl = mCursor.getString(posterColumnIndex);
+        title = mCursor.getString(titleColumnIndex);
+        releaseDate = mCursor.getString(dateColumnIndex);
+        votes = mCursor.getString(voteColumnIndex);
+        overview = mCursor.getString(overviewColumnIndex);
+        reviewUrl = mCursor.getString(reviewColumnIndex);
+        trailerUrl = mCursor.getString(trailerColumnIndex);
 
-        holder.movieID.setText(id);
+        holder.movieID.setText(mID);
+        Picasso.with(mContext).load(posterUrl).into(holder.movieView);
         holder.movieTitle.setText(title);
     }
 
@@ -83,17 +118,43 @@ public class SimpleAdapter extends RecyclerView.Adapter<SimpleAdapter.TaskViewHo
 
         TextView movieID;
         TextView movieTitle;
+        ImageView movieView;
         public TaskViewHolder(View view) {
             super(view);
-
+            movieView = view.findViewById(R.id.single_movie);
             movieID = view.findViewById(R.id.movie_id);
             movieTitle = view.findViewById(R.id.movie_favorit_title);
+            view.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View view) {
-
+            if (mClickListener != null) mClickListener.onItemDBBClick(view, getAdapterPosition());
         }
+    }
+
+    // parent activity will implement this method to respond to click events
+    public interface ItemClickListener {
+        void onItemDBBClick(View view, int position);
+    }
+
+    // allows clicks events to be caught
+    void setClickListener(ItemClickListener itemClickListener) {
+        this.mClickListener = itemClickListener;
+    }
+    // convenience method for getting movie at click position
+    Movie getDBItem(int position) {
+        mCursor.moveToPosition(position);
+        //onBindViewHolder(holder, position);
+        mID = mCursor.getString(idColumnIndex);
+        posterUrl = mCursor.getString(posterColumnIndex);
+        title = mCursor.getString(titleColumnIndex);
+        releaseDate = mCursor.getString(dateColumnIndex);
+        votes = mCursor.getString(voteColumnIndex);
+        overview = mCursor.getString(overviewColumnIndex);
+        reviewUrl = mCursor.getString(reviewColumnIndex);
+        trailerUrl = mCursor.getString(trailerColumnIndex);
+        return new Movie(Integer.parseInt(mID), posterUrl, title, releaseDate, Integer.parseInt(votes), overview, reviewUrl, trailerUrl);
     }
 }
 

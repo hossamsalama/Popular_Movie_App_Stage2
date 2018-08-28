@@ -7,7 +7,7 @@ import android.provider.BaseColumns;
  * Created by hossam on 5/25/2018.
  */
 
-public class TaskContract {
+public final class TaskContract {
     /* Add content provider constants to the Contract
      Clients need to know how to access the task data, and it's your job to provide
      these content URI's for the path to that data:
@@ -41,7 +41,14 @@ public class TaskContract {
         // Since TaskEntry implements the interface "BaseColumns", it has an automatically produced
         // "_ID" column in addition to the two below
         public static final String COLUMN_ID = "id";
+        public static final String COLUMN_POSTER = "poster";
         public static final String COLUMN_TITLE = "title";
-
+        public static final String COLUMN_RELEASE_DATE = "release_date";
+        public static final String COLUMN_VOTES = "votes";
+        public static final String COLUMN_OVERVIEW = "overview";
+        public static final String COLUMN_REVIEW_URL = "reviews";
+        public static final String COLUMN_TRAILER_URL = "trailers";
+        public static final String COLUMN_FAVORITE = "favorite_list";
     }
+    private TaskContract(){}
 }

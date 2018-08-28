@@ -25,61 +25,20 @@ import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
-import static com.example.hossam.simpledatabase.MainActivity.API_KEY;
-
 public class DetailsActivity extends AppCompatActivity {
 
-    //private static final int DETAIL_LOADER = 1;
     private static final int REVIEW_LOADER = 2;
     private static final int TRAILER_LOADER = 3;
 
-    //private SimpleAdapter detailAdapter;
     private Movie movie;
 
     Button insert;
     String title;
     int movieID;
-
+    String movieUrl;
     TextView userReviews;
-    TextView movieTrailer;
     String reviewUrl;
     String trailerUrl;
-    static final String REVIEWS_URL = "https://api.themoviedb.org/3/movie/";
-    static final String RVIEWS_URL_2 = "/reviews?page=1&language=en-US&api_key=";
-    static final String TRAILER_URL = "http://api.themoviedb.org/3/movie/";
-    static final String TRAILER_URL_2 = "/videos?api_key=";
-
-   /* //private MyRecyclerViewAdapter reviewAdapter;
-    private android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor> detailsMovieLoader
-            = new android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor>(){
-        @Override
-        public android.support.v4.content.Loader<Cursor> onCreateLoader(int id, Bundle args) {
-            // Since the editor shows all pet attributes, define a projection that contains
-            // all columns from the pet table
-            String[] projection = {
-                    TaskContract.TaskEntry.COLUMN_ID,
-                    TaskContract.TaskEntry.COLUMN_TITLE };
-
-            // This loader will execute the ContentProvider's query method on a background thread
-            return new android.support.v4.content.CursorLoader(getApplicationContext(),   // Parent activity context
-                    TaskContract.TaskEntry.CONTENT_URI,         // Query the content URI for the current pet
-                    projection,             // Columns to include in the resulting Cursor
-                    null,                   // No selection clause
-                    null,                   // No selection arguments
-                    null);                  // Default sort order
-        }
-
-        @Override
-        public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
-            detailAdapter.swapCursor(data);
-
-        }
-
-        @Override
-        public void onLoaderReset(android.support.v4.content.Loader<Cursor> loader) {
-            detailAdapter.swapCursor(null);
-        }
-    };*/
 
     private android.support.v4.app.LoaderManager.LoaderCallbacks<List<String>> reviewMovieLoader
             = new android.support.v4.app.LoaderManager.LoaderCallbacks<List<String>>() {
@@ -150,6 +109,11 @@ public class DetailsActivity extends AppCompatActivity {
     };
     String selection;
     String[] selectionArgs;
+    private String releaseDate;
+    private Number voteAverage;
+    private String plotSynopsis;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -160,18 +124,21 @@ public class DetailsActivity extends AppCompatActivity {
 
         insert = findViewById(R.id.fav_button);
 
-        //detailAdapter = new SimpleAdapter(this, null);
 
         final Intent intentThatStartedThisActivity = getIntent();
-        movie = intentThatStartedThisActivity.getParcelableExtra("MovieDetails");
+        boolean isFavorite = intentThatStartedThisActivity.getBooleanExtra("isFavoriteChoosing", false);
+        if (isFavorite){
+            movie = intentThatStartedThisActivity.getParcelableExtra("MovieDBDetails");
+        } else {
+            movie = intentThatStartedThisActivity.getParcelableExtra("MovieDetails");
+        }
 
-        // getSupportLoaderManager().initLoader(DETAIL_LOADER, null, detailsMovieLoader);
-
-        String movieUrl = movie.getURL();
+        movieID = movie.getMovieID();
+        movieUrl = movie.getURL();
         title = movie.getTitle();
-        String releaseDate = movie.getReleaseDate();
-        String voteAverage = movie.getVoteAverage();
-        String plotSynopsis = movie.getOverview();
+        releaseDate = movie.getReleaseDate();
+        voteAverage = movie.getVoteAverage();
+        plotSynopsis = movie.getOverview();
 
         final ImageView moviePoster = findViewById(R.id.movie_poster);
         TextView movieTitle = findViewById(R.id.movie_title);
@@ -182,13 +149,12 @@ public class DetailsActivity extends AppCompatActivity {
         Picasso.with(this).load(movieUrl).into(moviePoster);
         movieTitle.setText(title);
         movieReleaseDate.setText(releaseDate);
-        movieVoteAverage.setText(voteAverage);
+        movieVoteAverage.setText(String.valueOf(voteAverage));
         overview.setText(plotSynopsis);
 
-        movieID = movie.getMovieID();
 
-        reviewUrl =  REVIEWS_URL + (movieID) + RVIEWS_URL_2 + API_KEY;
-        trailerUrl = TRAILER_URL + (movieID) + TRAILER_URL_2 + API_KEY;
+        reviewUrl =  movie.getReviewsUrl();
+        trailerUrl = movie.getTrailerUrl();
         getSupportLoaderManager().initLoader(REVIEW_LOADER, null, reviewMovieLoader);
         getSupportLoaderManager().initLoader(TRAILER_LOADER, null, trailerMovieLoader);
 
@@ -216,7 +182,14 @@ public class DetailsActivity extends AppCompatActivity {
                                                String dbfield, String[] fieldValue) {
         String[] projection = {
                 TaskContract.TaskEntry.COLUMN_ID,
-                TaskContract.TaskEntry.COLUMN_TITLE};
+                TaskContract.TaskEntry.COLUMN_POSTER,
+                TaskContract.TaskEntry.COLUMN_TITLE,
+                TaskContract.TaskEntry.COLUMN_RELEASE_DATE,
+                TaskContract.TaskEntry.COLUMN_VOTES,
+                TaskContract.TaskEntry.COLUMN_OVERVIEW,
+                TaskContract.TaskEntry.COLUMN_REVIEW_URL,
+                TaskContract.TaskEntry.COLUMN_TRAILER_URL
+        };
 
         Cursor cursor = getContentResolver().query(TaskContract.TaskEntry.CONTENT_URI, projection, dbfield, fieldValue, null);
         if (cursor.getCount() < 1) {
@@ -230,7 +203,13 @@ public class DetailsActivity extends AppCompatActivity {
     private void insertToDB(View view) {
             ContentValues values = new ContentValues();
             values.put(TaskContract.TaskEntry.COLUMN_ID, movieID);
+            values.put(TaskContract.TaskEntry.COLUMN_POSTER, movieUrl);
             values.put(TaskContract.TaskEntry.COLUMN_TITLE, title);
+        values.put(TaskContract.TaskEntry.COLUMN_RELEASE_DATE, releaseDate);
+        values.put(TaskContract.TaskEntry.COLUMN_VOTES, String.valueOf(voteAverage));
+        values.put(TaskContract.TaskEntry.COLUMN_OVERVIEW, plotSynopsis);
+        values.put(TaskContract.TaskEntry.COLUMN_REVIEW_URL, reviewUrl);
+        values.put(TaskContract.TaskEntry.COLUMN_TRAILER_URL, trailerUrl);
 
             Uri newUri = getContentResolver().insert(TaskContract.TaskEntry.CONTENT_URI, values);
 

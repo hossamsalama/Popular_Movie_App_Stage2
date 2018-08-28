@@ -4,6 +4,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -29,7 +30,7 @@ import com.example.hossam.simpledatabase.data.TaskContract;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MyRecyclerViewAdapter.ItemClickListener{
+public class MainActivity extends AppCompatActivity implements MyRecyclerViewAdapter.ItemClickListener, SimpleAdapter.ItemClickListener{
 
     /**
      * URL to query the The Movie DB api dataset for movies information
@@ -82,11 +83,17 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
 
         @Override
         public android.support.v4.content.Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
-            // Since the editor shows all movies attributes, define a projection that contains
+            // Since the details shows all movies attributes, define a projection that contains
             // all columns from the movies table
             String[] projection = {
                     TaskContract.TaskEntry.COLUMN_ID,
-                    TaskContract.TaskEntry.COLUMN_TITLE};
+                    TaskContract.TaskEntry.COLUMN_POSTER,
+                    TaskContract.TaskEntry.COLUMN_TITLE,
+                    TaskContract.TaskEntry.COLUMN_RELEASE_DATE,
+                    TaskContract.TaskEntry.COLUMN_VOTES,
+                    TaskContract.TaskEntry.COLUMN_OVERVIEW,
+                    TaskContract.TaskEntry.COLUMN_REVIEW_URL,
+                    TaskContract.TaskEntry.COLUMN_TRAILER_URL};
 
             // This loader will execute the ContentProvider's query method on a background thread
             return new android.support.v4.content.CursorLoader(getApplicationContext(),   // Parent activity context
@@ -105,6 +112,7 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
          */
         @Override
         public void onLoadFinished(android.support.v4.content.Loader<Cursor> loader, Cursor data) {
+            circularProgressBar.setVisibility(View.GONE);
             // Update the data that the adapter uses to create ViewHolders
             simpleAdapter.swapCursor(data);
         }
@@ -122,12 +130,15 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
         }
 
     };
-    private boolean isFavoriteChoosing;
+    private static boolean isFavoriteChoosing;
     RecyclerView recyclerView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        SharedPreferences sharedPrefs = getSharedPreferences("FavoriteMovie", MODE_PRIVATE);
+        isFavoriteChoosing = sharedPrefs.getBoolean("isFavoriteChoosing", isFavoriteChoosing);
 
         //Get Api key from gradle
         API_KEY = BuildConfig.MY_API_KEY;;
@@ -141,26 +152,9 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
         simpleAdapter = new SimpleAdapter(this, null);
         mAdapter = new MyRecyclerViewAdapter(getApplicationContext(), movieList);
         mAdapter.setClickListener(this);
+        simpleAdapter.setClickListener(this);
 
-        errorMessage = findViewById(R.id.empty_view) ;
-        circularProgressBar = findViewById(R.id.loading_spinner);
-
-        if (isOnline()){
-            // Get a reference to the LoaderManager, in order to interact with loaders.
-            android.support.v4.app.LoaderManager loaderManager = getSupportLoaderManager();
-
-            // Initialize the loader. Pass in the int ID constant defined above and pass in null for
-            // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
-            // because this activity implements the LoaderCallbacks interface).
-            loaderManager.initLoader(Movies_LOADER_ID, null, movieLoader);
-
-            loaderManager.initLoader(FAVORITE_LOADER_ID, null, favoriteMoviesLoader);
-        }
-        else {
-            circularProgressBar.setVisibility(View.GONE);
-            errorMessage.setText(R.string.no_internet_connection);
-        }
-         /*
+        /*
          * Use this setting to improve performance if you know that changes in content do not
          * change the child layout size in the RecyclerView
          */
@@ -168,10 +162,27 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
         recyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
 
         recyclerView.setHasFixedSize(true);
+        errorMessage = findViewById(R.id.empty_view) ;
+        circularProgressBar = findViewById(R.id.loading_spinner);
+        // Get a reference to the LoaderManager, in order to interact with loaders.
+        android.support.v4.app.LoaderManager loaderManager = getSupportLoaderManager();
+        loaderManager.initLoader(FAVORITE_LOADER_ID, null, favoriteMoviesLoader);
+
         if (isFavoriteChoosing){
             recyclerView.setAdapter(simpleAdapter);
+            circularProgressBar.setVisibility(View.GONE);
+            errorMessage.setVisibility(View.GONE);
         } else {
+            if (isOnline()){
+            // Initialize the loader. Pass in the int ID constant defined above and pass in null for
+            // the bundle. Pass in this activity for the LoaderCallbacks parameter (which is valid
+            // because this activity implements the LoaderCallbacks interface).
+            loaderManager.initLoader(Movies_LOADER_ID, null, movieLoader);
             recyclerView.setAdapter(mAdapter);
+            } else {
+                circularProgressBar.setVisibility(View.GONE);
+                errorMessage.setText(R.string.no_internet_connection);
+            }
         }
     }
 
@@ -211,34 +222,43 @@ public class MainActivity extends AppCompatActivity implements MyRecyclerViewAda
     }
 
     private void updateMovieList(String movieRequestUrl) {
-        if (isOnline()) {
             mMovieRequestUrl = movieRequestUrl + API_KEY;
-
             if (isFavoriteChoosing){
                 recyclerView.setAdapter(simpleAdapter);
                 getSupportLoaderManager().restartLoader(FAVORITE_LOADER_ID, null, favoriteMoviesLoader);
+                circularProgressBar.setVisibility(View.GONE);
+                errorMessage.setVisibility(View.GONE);
             } else {
-                recyclerView.setAdapter(mAdapter);
-                getSupportLoaderManager().restartLoader(Movies_LOADER_ID, null, movieLoader);
+                if (isOnline()){
+                    recyclerView.setAdapter(mAdapter);
+                    getSupportLoaderManager().restartLoader(Movies_LOADER_ID, null, movieLoader);
+                } else {
+                    circularProgressBar.setVisibility(View.GONE);
+                    errorMessage.setText(R.string.no_internet_connection);
+                }
             }
+            SharedPreferences.Editor editor = getSharedPreferences("FavoriteMovie", MODE_PRIVATE).edit();
+            editor.putBoolean("isFavoriteChoosing", isFavoriteChoosing);
+            editor.commit();
 
         }
-        else {
-            circularProgressBar.setVisibility(View.GONE);
-            errorMessage.setText(R.string.no_internet_connection);
-        }
-    }
 
     @Override
     public void onItemClick(View view, int position) {
         Movie currentMovie = mAdapter.getItem(position);
         Intent showMovieDetailsIntent = new Intent(this, DetailsActivity.class);
         showMovieDetailsIntent.putExtra("MovieDetails", currentMovie);
-
-        Uri currentMovieUri = ContentUris.withAppendedId(TaskContract.TaskEntry.CONTENT_URI, position);
-
-        showMovieDetailsIntent.setData(currentMovieUri);
-
+        showMovieDetailsIntent.putExtra("isFavoriteChoosing", isFavoriteChoosing);
         startActivity(showMovieDetailsIntent);
+    }
+
+    @Override
+    public void onItemDBBClick(View view, int position) {
+        Movie currentMovie = simpleAdapter.getDBItem(position);
+        Intent showMovieDetailsIntent = new Intent(this, DetailsActivity.class);
+        showMovieDetailsIntent.putExtra("MovieDBDetails", currentMovie);
+        showMovieDetailsIntent.putExtra("isFavoriteChoosing", isFavoriteChoosing);
+        startActivity(showMovieDetailsIntent);
+
     }
 }

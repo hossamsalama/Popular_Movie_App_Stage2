@@ -14,8 +14,10 @@ class Movie implements Parcelable {
 
     static final String BASE_IMAGE_URL = "http://image.tmdb.org/t/p/w185";
 
-    static final String REVIEWS_URL = "https://api.themoviedb.org/3/movie/299536/reviews?page=1&language=en-US&api_key=";
-
+    static final String REVIEWS_URL = "https://api.themoviedb.org/3/movie/";
+    static final String RVIEWS_URL_2 = "/reviews?page=1&language=en-US&api_key=";
+    static final String TRAILER_URL = "http://api.themoviedb.org/3/movie/";
+    static final String TRAILER_URL_2 = "/videos?api_key=";
 
     private String mPoster_Path;
     private String mRelease_Date;
@@ -23,37 +25,47 @@ class Movie implements Parcelable {
     private String mTitle;
     private Number mPopularity;
     private int mVote;
-    private Number mVote_Average;
+    private int mVote_Average;
     private String mURL;
     private String mOverview;
 
     private String mReviewUrl;
-    private boolean isMovieFavorite;
+    private String mTrailerUrl;
 
-    private String voteAverageString;
+    //private int voteAverage;
     public Movie(String posterPath, int movieID, String title, Number popularity, int votes, Number averageVotes, String url, String releaseDate, String overview){
         mPoster_Path = posterPath;
         mMovieID = movieID;
         mTitle = title;
         mPopularity = popularity;
         mVote = votes;
-        mVote_Average = averageVotes;
+        mVote_Average = (int) averageVotes;
         mURL = url;
         mRelease_Date = releaseDate;
         mOverview = overview;
-        voteAverageString = String.valueOf(mVote_Average);
+        //voteAverageString = String.valueOf(mVote_Average);
 
-       mReviewUrl = REVIEWS_URL;
+       //mReviewUrl = REVIEWS_URL;
     }
 
-    public Movie() {
+    public Movie(int id, String posterUrl, String title, String releaseDate, Number votes, String overview, String reviewUrl, String trailerUrl) {
+        //new Movie("", id, title, 0, 0, votes, posterUrl, releaseDate, overview);
+        mMovieID = id;
+        mURL = posterUrl;
+        mTitle = title;
+        mRelease_Date = releaseDate;
+        mVote_Average = (int) votes;
+        mOverview = overview;
+        mReviewUrl = reviewUrl;
+        mTrailerUrl = trailerUrl;
     }
+
 
     private Movie(Parcel in) {
         mURL = in.readString();
         mTitle = in.readString();
         mRelease_Date = in.readString();
-        voteAverageString = in.readString();
+        mVote_Average = Integer.parseInt(in.readString());
         mOverview = in.readString();
         mMovieID = Integer.parseInt(in.readString());
 
@@ -101,8 +113,8 @@ class Movie implements Parcelable {
         return mMovieID;
     }
 
-    public String getVoteAverage(){
-        return voteAverageString;
+    public int getVoteAverage(){
+        return mVote_Average;
     }
 
     public int getVote(){
@@ -121,6 +133,13 @@ class Movie implements Parcelable {
         return mOverview;
     }
 
-    String getReviewsUrl(){ return mReviewUrl;}
+    String getReviewsUrl(){
+        mReviewUrl =  REVIEWS_URL + getMovieID() + RVIEWS_URL_2 + API_KEY;
+        return mReviewUrl;
+    }
+    String getTrailerUrl(){
+        mTrailerUrl = TRAILER_URL + getMovieID() + TRAILER_URL_2 + API_KEY;
+        return mTrailerUrl;
+    }
 
 }
